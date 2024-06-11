@@ -217,3 +217,7 @@ Uma vez que isolamos o(s) documento(s) que queremos alterar, precisamos informar
  - **$push**: Adiciona um valor à um **_array_**;
  - **$pull**: Remove um valor de um **_array_**;
  - **$addToSet**: Adiciona um valor à um **_array_** caso esse valor ainda não esteja presente.
+
+## Parte 3: Exemplos
+Os exemplos estão separados por categoria
+[Atualizações](./atualizacoes.md)
