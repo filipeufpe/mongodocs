@@ -145,3 +145,42 @@ O estágio `$project` é usado para incluir, excluir ou adicionar campos no resu
   - as: Um identificador para cada elemento do array.
   - cond: A condição para incluir o elemento no array filtrado.
  - estudantesMaior10: Similar ao estudantesMenorIgual10, mas para o array de estudantes com período maior que 10.  
+
+ ## 4. Vagas Ativas no Momento
+
+ ```javascript
+ db.servicos.aggregate([
+  { $unwind: "$vagas" },
+  {
+    $match: {
+      "vagas.inicio": { $lte: new Date() },
+      "vagas.fim": { $gte: new Date() }
+    }
+  },
+  {
+    $group: {
+      _id: "$nome",
+      vagasAtivas: { $sum: 1 }
+    }
+  }
+])
+ ```
+
+1. Pipeline de Agregação
+
+A função aggregate recebe um _array_ de estágios, onde cada estágio representa uma operação a ser realizada na coleção. Neste caso, temos três estágios: `$unwind`, `$match` e `$group`.
+
+2. Estágio `$unwind`
+
+O estágio `$unwind` deconstrói um _array_ embutido em documentos e cria um documento para cada elemento do _array_. No contexto da nossa consulta, $unwind: "$vagas" transforma cada documento da coleção servicos em múltiplos documentos, um para cada vaga no _array_ vagas.
+
+3. Estágio `$match`
+
+O estágio `$match` filtra os documentos da coleção com base em uma condição especificada. Aqui, estamos filtrando as vagas ativas, onde a data atual está entre vaga.inicio e vaga.fim.
+
+4. Estágio `$group`
+
+O estágio `$group` agrupa documentos pelo valor de um campo especificado _id e pode calcular valores agregados para cada grupo.
+
+    _id: "$nome": Agrupa os documentos pelo nome do serviço.
+    vagasAtivas: { $sum: 1 }: Calcula o total de vagas ativas para cada grupo (serviço).
