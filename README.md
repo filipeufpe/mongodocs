@@ -37,7 +37,7 @@ var area = pi * raio ** 2;
 
 Objetos são estruturas de dados mais complexas que `números` ou `texto`. Objetos podem conter um ou mais `atributos`, que são escritos na forma de `chave-valor`. Objetos são delimitados por `{}`. Esse é um exemplo de um objeto simples:
 
-```json
+```javascript
 {
   "nome": "Filipe Aguiar"
 }
@@ -47,7 +47,7 @@ Nesse exemplo o atributo `nome` é definido pela chave `nome` e pelo valor `"Fil
 
 Um objeto pode conter outros objetos, como no exemplo:
 
-```json
+```javascript
 {
     nome: "Universidade Federal de Pernambuco",
     cnpj: 5554447778899,
@@ -62,7 +62,7 @@ Um objeto pode conter outros objetos, como no exemplo:
 
 Muitas vezes, para representar um objeto, é necessário que um atributo contenha várias informações, como telefones numa instiuição, nesses casos podemos utilizar _arrays_, que nada mais são que um conjunto de outros dados. Um array é delimitado por `[]`.
 
-```json
+```javascript
 {
     nome: "Universidade Federal de Pernambuco",
     cnpj: 5554447778899,
@@ -79,7 +79,7 @@ Muitas vezes, para representar um objeto, é necessário que um atributo contenh
 
 No exemplo acima, o atributo `telefones` é definido como um _array_ de valores simples. No entanto, podemos criar um _array_ de **objetos**, segue exemplo:
 
-```json
+```javascript
 {
     nome: "Universidade Federal de Pernambuco",
     cnpj: 5554447778899,
@@ -204,7 +204,7 @@ Para atualizar documentos, existem várias **ações** disponíveis. Entretanto 
 Um filtro é um objeto que contém parte de um documento que queremos encontrar. É onde definimos **qual (ou quais)** documento(s) queremos atualizar.
 
 Por exemplo ao usar o seguinte filtro:
-```json
+```javascript
     { sigla: "ufpe" }
 ```
 Conseguimos isolar o documento referente à Universidade Federal de Pernambuco. 
