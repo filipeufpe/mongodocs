@@ -67,7 +67,7 @@ Muitas vezes, para representar um objeto, é necessário que um atributo contenh
     nome: "Universidade Federal de Pernambuco",
     cnpj: 5554447778899,
     endereco: {
-        rua: "Av. xxx"
+        rua: "Av. xxx",
         bairro: "Cidade universitária"
     },
     telefones: [
@@ -85,7 +85,7 @@ No exemplo acima, o atributo `telefones` é definido como um _array_ de valores 
     cnpj: 5554447778899,
     sigla: "ufpe",
     endereco: {
-        rua: "Av. xxx"
+        rua: "Av. xxx",
         cidade: "Recife",
         bairro: "Cidade universitária"
     },
@@ -101,7 +101,6 @@ No exemplo acima, o atributo `telefones` é definido como um _array_ de valores 
     ]
 }
 ```
-
 Objetos podem ser atribuídos à variáveis. Caso queiramos utilizar o seu valor posteriormente. O seguinte código atribui o objeto acima à uma variável chamada `ufpe`:
 
 ```javascript
@@ -110,7 +109,7 @@ var ufpe = {
     cnpj: 5554447778899,
     sigla: "ufpe",
     endereco: {
-        rua: "Av. xxx"
+        rua: "Av. xxx",
         cidade: "Recife",
         bairro: "Cidade universitária"
     },
