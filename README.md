@@ -193,3 +193,28 @@ db.instituicao.insertOne({
     ]
 })
 ```
+
+Muitas das ações do _mongodb_ possuem variações que permitem manipular **vários** objetos ao mesmo tempo. Essas ações possuem a palavra `Many`. Um exemplo é a operação de inserção, que possui a variante `insertMany()`. Caso tivéssemos várias variáveis, cada uma representando uma instituicao diferente, poderíamos executar:
+```javascript
+db.instituicoes.insertMany( ufpe, ufpb, ufal, ufrpe )
+```
+
+### 2.2 Atualizando documentos
+Para atualizar documentos, existem várias **ações** disponíveis. Entretanto é necessário **filtrar** primeiro os documentos para que, em seguida, possamos atualizar os valores dos atributos.
+#### 2.2.1 Filtros
+Um filtro é um objeto que contém parte de um documento que queremos encontrar. É onde definimos **qual (ou quais)** documento(s) queremos atualizar.
+
+Por exemplo ao usar o seguinte filtro:
+```json
+    { sigla: "ufpe" }
+```
+Conseguimos isolar o documento referente à Universidade Federal de Pernambuco. 
+
+#### 2.2.2 Operadores mais comuns
+Uma vez que isolamos o(s) documento(s) que queremos alterar, precisamos informar qual **operação** queremos fazer. As mais comuns são:
+ - **$set**: Define o valor de um atributo;
+ - **$unset**: Remove um campo;
+ - **$inc**: Incrementa um campo (soma + 1 ao seu valor anterior);
+ - **$push**: Adiciona um valor à um **_array_**;
+ - **$pull**: Remove um valor de um **_array_**;
+ - **$addToSet**: Adiciona um valor à um **_array_** caso esse valor ainda não esteja presente.
