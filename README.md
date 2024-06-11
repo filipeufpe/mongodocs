@@ -52,7 +52,7 @@ Um objeto pode conter outros objetos, como no exemplo:
     nome: "Universidade Federal de Pernambuco",
     cnpj: 5554447778899,
     endereco: {
-        rua: "Av. xxx"
+        rua: "Av. xxx",
         bairro: "Cidade universitária"
     }
 }
