@@ -247,8 +247,9 @@ O estágio `$group` agrupa documentos pelo valor de um campo especificado _id e 
       vagas: 1
     }
   }
-]```
+]
 
+```
 Vamos detalhar a funcionalidade dessa consulta MongoDB usando a agregação em várias etapas. A consulta envolve operações como `$unwind`, `$lookup`, `$group` e `$project` para transformar e combinar documentos de duas coleções: uma coleção principal e uma coleção relacionada chamada "instituicoes".
 
 ### 1. Desmontagem de Arrays com `$unwind`
