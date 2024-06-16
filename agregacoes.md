@@ -184,3 +184,191 @@ O estágio `$group` agrupa documentos pelo valor de um campo especificado _id e 
 
  - _id: "$nome": Agrupa os documentos pelo nome do serviço.
  - vagasAtivas: { $sum: 1 }: Calcula o total de vagas ativas para cada grupo (serviço).
+
+## 5. Serviços e Vagas com nomes de alunos
+```javascript
+[
+  {
+    $unwind: "$vagas"
+  },
+  {
+    $lookup: {
+      from: "instituicoes",
+      let: {
+        estudanteId: "$vagas.estudante_id"
+      },
+      pipeline: [
+        {
+          $unwind: "$estudantes"
+        },
+        {
+          $match: {
+            $expr: {
+              $eq: [
+                "$estudantes._id",
+                "$$estudanteId"
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            "estudantes.nome": 1,
+            _id: 0
+          }
+        }
+      ],
+      as: "estudante_info"
+    }
+  },
+  {
+    $unwind: "$estudante_info"
+  },
+  {
+    $group: {
+      _id: "$_id",
+      nome: {
+        $first: "$nome"
+      },
+      vagas: {
+        $push: {
+          nome_do_estudante:
+            "$estudante_info.estudantes.nome",
+          inicio: "$vagas.inicio",
+          fim: "$vagas.fim"
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      nome: 1,
+      vagas: 1
+    }
+  }
+]```
+
+Vamos detalhar a funcionalidade dessa consulta MongoDB usando a agregação em várias etapas. A consulta envolve operações como `$unwind`, `$lookup`, `$group` e `$project` para transformar e combinar documentos de duas coleções: uma coleção principal e uma coleção relacionada chamada "instituicoes".
+
+### 1. Desmontagem de Arrays com `$unwind`
+
+```javascript
+{
+  $unwind: "$vagas"
+}
+```
+
+Esta etapa desmonta o array `vagas` para que cada documento contendo um array `vagas` se torne vários documentos, cada um contendo um único elemento desse array. Se um documento tiver três vagas, ele será transformado em três documentos, cada um com um único elemento `vagas`.
+
+### 2. Juntando com Outra Coleção usando `$lookup`
+
+```javascript
+{
+  $lookup: {
+    from: "instituicoes",
+    let: {
+      estudanteId: "$vagas.estudante_id"
+    },
+    pipeline: [
+      {
+        $unwind: "$estudantes"
+      },
+      {
+        $match: {
+          $expr: {
+            $eq: [
+              "$estudantes._id",
+              "$$estudanteId"
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          "estudantes.nome": 1,
+          _id: 0
+        }
+      }
+    ],
+    as: "estudante_info"
+  }
+}
+```
+
+Nesta etapa, a operação `$lookup` realiza uma junção com a coleção "instituicoes". Aqui está como funciona:
+
+- **`from: "instituicoes"`**: Indica a coleção para realizar a junção.
+- **`let: { estudanteId: "$vagas.estudante_id" }`**: Define uma variável `estudanteId` que será usada no pipeline da junção.
+- **`pipeline`**: Este é um pipeline de agregação aplicado à coleção "instituicoes".
+  - **`$unwind: "$estudantes"`**: Desmonta o array `estudantes` na coleção "instituicoes".
+  - **`$match: { $expr: { $eq: [ "$estudantes._id", "$$estudanteId" ] } }`**: Filtra documentos onde `estudantes._id` corresponde ao `estudanteId` definido anteriormente.
+  - **`$project: { "estudantes.nome": 1, _id: 0 }`**: Projeta apenas o campo `nome` do estudante.
+
+- **`as: "estudante_info"`**: Define o nome do array de resultados da junção.
+
+### 3. Desmontagem do Resultado da Junção com `$unwind`
+
+```javascript
+{
+  $unwind: "$estudante_info"
+}
+```
+
+Esta etapa desmonta o array `estudante_info` para que cada documento que tenha um array `estudante_info` se torne vários documentos, cada um contendo um único elemento desse array.
+
+### 4. Agrupamento dos Documentos com `$group`
+
+```javascript
+{
+  $group: {
+    _id: "$_id",
+    nome: {
+      $first: "$nome"
+    },
+    vagas: {
+      $push: {
+        nome_do_estudante: "$estudante_info.estudantes.nome",
+        inicio: "$vagas.inicio",
+        fim: "$vagas.fim"
+      }
+    }
+  }
+}
+```
+
+Aqui, os documentos são agrupados de volta pelo campo `_id` original. As seguintes operações são realizadas no agrupamento:
+
+- **`_id: "$_id"`**: Define o campo `_id` para agrupar os documentos.
+- **`nome: { $first: "$nome" }`**: Mantém o primeiro valor do campo `nome` em cada grupo.
+- **`vagas: { $push: { ... } }`**: Cria um array `vagas` contendo objetos com `nome_do_estudante`, `inicio` e `fim`.
+
+### 5. Projeção dos Campos com `$project`
+
+```javascript
+{
+  $project: {
+    _id: 0,
+    nome: 1,
+    vagas: 1
+  }
+}
+```
+
+Finalmente, esta etapa projeta os campos desejados:
+
+- **`_id: 0`**: Exclui o campo `_id` dos resultados finais.
+- **`nome: 1`**: Inclui o campo `nome`.
+- **`vagas: 1`**: Inclui o campo `vagas`.
+
+### Resumo da Consulta
+
+A consulta completa realiza as seguintes operações:
+
+1. Desmonta o array `vagas`.
+2. Realiza uma junção com a coleção "instituicoes" para obter informações sobre os estudantes relacionados a cada vaga.
+3. Desmonta o array resultante da junção para lidar com cada estudante individualmente.
+4. Agrupa de volta os documentos originais, coletando as informações necessárias.
+5. Projeta apenas os campos desejados no resultado final.
+
+O resultado final é uma lista de documentos contendo o `nome` e um array `vagas` com informações detalhadas sobre cada vaga, incluindo o nome do estudante, a data de início e a data de fim.
