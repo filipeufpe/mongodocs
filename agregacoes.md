@@ -187,189 +187,78 @@ O estágio `$group` agrupa documentos pelo valor de um campo especificado _id e 
 
 ## 5. Serviços e Vagas com nomes de alunos
 ```javascript
-[
+db.servicos.aggregate([
   {
     $unwind: "$vagas"
   },
   {
     $lookup: {
       from: "instituicoes",
-      let: {
-        estudanteId: "$vagas.estudante_id"
-      },
-      pipeline: [
-        {
-          $unwind: "$estudantes"
-        },
-        {
-          $match: {
-            $expr: {
-              $eq: [
-                "$estudantes._id",
-                "$$estudanteId"
-              ]
-            }
-          }
-        },
-        {
-          $project: {
-            "estudantes.nome": 1,
-            _id: 0
-          }
-        }
-      ],
-      as: "estudante_info"
-    }
+      localField: "vagas.estudante_id",
+      foreignField: "estudantes._id",
+      as: "info_estudante"
+    },
   },
   {
-    $unwind: "$estudante_info"
+    $unwind: "$info_estudante"
   },
   {
-    $group: {
-      _id: "$_id",
-      nome: {
-        $first: "$nome"
-      },
-      vagas: {
-        $push: {
-          nome_do_estudante:
-            "$estudante_info.estudantes.nome",
-          inicio: "$vagas.inicio",
-          fim: "$vagas.fim"
-        }
+    $unwind: "$info_estudante.estudantes"
+  },
+  {
+    $match: {
+      $expr: {
+        $eq: [
+          "$info_estudante.estudantes._id",
+          "$vagas.estudante_id"
+        ]
       }
     }
   },
   {
     $project: {
       _id: 0,
-      nome: 1,
-      vagas: 1
+      "servico": "$nome",
+      "instituicao": "$info_estudante.nome",
+      "nomeEstudante": "$info_estudante.estudantes.nome",
+      "curso": "$info_estudante.estudantes.curso",
+      "data_inicio": "$vagas.inicio",
+      "data_fim": "$vagas.fim",
     }
   }
-]
-
+])
 ```
-Vamos detalhar a funcionalidade dessa consulta MongoDB usando a agregação em várias etapas. A consulta envolve operações como `$unwind`, `$lookup`, `$group` e `$project` para transformar e combinar documentos de duas coleções: uma coleção principal e uma coleção relacionada chamada "instituicoes".
+Essa consulta MongoDB usa o método `aggregate` para processar e transformar dados da coleção `servicos`, combinando informações da coleção `instituicoes`. Vamos explicar cada estágio da agregação:
 
-### 1. Desmontagem de Arrays com `$unwind`
+1. **$unwind: "$vagas"**
+   - Esta etapa desestrutura o array `vagas` em múltiplos documentos, um para cada elemento do array. Se um documento tem um array `vagas` com 3 elementos, ele será desmembrado em 3 documentos separados, cada um com uma única `vaga`.
 
-```javascript
-{
-  $unwind: "$vagas"
-}
-```
+2. **$lookup**
+   - O operador `$lookup` realiza uma junção com a coleção `instituicoes`.
+   - `from: "instituicoes"` especifica a coleção para junção.
+   - `localField: "vagas.estudante_id"` usa o campo `estudante_id` em cada elemento `vaga` como a chave local para a junção.
+   - `foreignField: "estudantes._id"` especifica o campo na coleção `instituicoes` que será comparado com `localField`.
+   - `as: "info_estudante"` armazena o resultado da junção no campo `info_estudante`.
 
-Esta etapa desmonta o array `vagas` para que cada documento contendo um array `vagas` se torne vários documentos, cada um contendo um único elemento desse array. Se um documento tiver três vagas, ele será transformado em três documentos, cada um com um único elemento `vagas`.
+3. **$unwind: "$info_estudante"**
+   - Desestrutura o array `info_estudante` criado na etapa anterior, criando múltiplos documentos para cada elemento do array.
 
-### 2. Juntando com Outra Coleção usando `$lookup`
+4. **$unwind: "$info_estudante.estudantes"**
+   - Desestrutura o array `estudantes` dentro de `info_estudante`, criando múltiplos documentos para cada estudante dentro da instituição.
 
-```javascript
-{
-  $lookup: {
-    from: "instituicoes",
-    let: {
-      estudanteId: "$vagas.estudante_id"
-    },
-    pipeline: [
-      {
-        $unwind: "$estudantes"
-      },
-      {
-        $match: {
-          $expr: {
-            $eq: [
-              "$estudantes._id",
-              "$$estudanteId"
-            ]
-          }
-        }
-      },
-      {
-        $project: {
-          "estudantes.nome": 1,
-          _id: 0
-        }
-      }
-    ],
-    as: "estudante_info"
-  }
-}
-```
+5. **$match**
+   - Filtra os documentos para garantir que apenas aqueles em que o `estudante_id` na vaga corresponde ao `_id` do estudante no array `estudantes` da instituição sejam mantidos.
+   - `$expr` permite a comparação de campos no mesmo documento.
+   - `$eq` verifica se os valores dos dois campos são iguais.
 
-Nesta etapa, a operação `$lookup` realiza uma junção com a coleção "instituicoes". Aqui está como funciona:
+6. **$project**
+   - Seleciona e formata os campos desejados para a saída final.
+   - `_id: 0` exclui o campo `_id` do resultado.
+   - `"servico": "$nome"` mapeia o nome do serviço para o campo `servico`.
+   - `"instituicao": "$info_estudante.nome"` mapeia o nome da instituição para o campo `instituicao`.
+   - `"nomeEstudante": "$info_estudante.estudantes.nome"` mapeia o nome do estudante para o campo `nomeEstudante`.
+   - `"curso": "$info_estudante.estudantes.curso"` mapeia o curso do estudante para o campo `curso`.
+   - `"data_inicio": "$vagas.inicio"` mapeia a data de início da vaga para o campo `data_inicio`.
+   - `"data_fim": "$vagas.fim"` mapeia a data de fim da vaga para o campo `data_fim`.
 
-- **`from: "instituicoes"`**: Indica a coleção para realizar a junção.
-- **`let: { estudanteId: "$vagas.estudante_id" }`**: Define uma variável `estudanteId` que será usada no pipeline da junção.
-- **`pipeline`**: Este é um pipeline de agregação aplicado à coleção "instituicoes".
-  - **`$unwind: "$estudantes"`**: Desmonta o array `estudantes` na coleção "instituicoes".
-  - **`$match: { $expr: { $eq: [ "$estudantes._id", "$$estudanteId" ] } }`**: Filtra documentos onde `estudantes._id` corresponde ao `estudanteId` definido anteriormente.
-  - **`$project: { "estudantes.nome": 1, _id: 0 }`**: Projeta apenas o campo `nome` do estudante.
-
-- **`as: "estudante_info"`**: Define o nome do array de resultados da junção.
-
-### 3. Desmontagem do Resultado da Junção com `$unwind`
-
-```javascript
-{
-  $unwind: "$estudante_info"
-}
-```
-
-Esta etapa desmonta o array `estudante_info` para que cada documento que tenha um array `estudante_info` se torne vários documentos, cada um contendo um único elemento desse array.
-
-### 4. Agrupamento dos Documentos com `$group`
-
-```javascript
-{
-  $group: {
-    _id: "$_id",
-    nome: {
-      $first: "$nome"
-    },
-    vagas: {
-      $push: {
-        nome_do_estudante: "$estudante_info.estudantes.nome",
-        inicio: "$vagas.inicio",
-        fim: "$vagas.fim"
-      }
-    }
-  }
-}
-```
-
-Aqui, os documentos são agrupados de volta pelo campo `_id` original. As seguintes operações são realizadas no agrupamento:
-
-- **`_id: "$_id"`**: Define o campo `_id` para agrupar os documentos.
-- **`nome: { $first: "$nome" }`**: Mantém o primeiro valor do campo `nome` em cada grupo.
-- **`vagas: { $push: { ... } }`**: Cria um array `vagas` contendo objetos com `nome_do_estudante`, `inicio` e `fim`.
-
-### 5. Projeção dos Campos com `$project`
-
-```javascript
-{
-  $project: {
-    _id: 0,
-    nome: 1,
-    vagas: 1
-  }
-}
-```
-
-Finalmente, esta etapa projeta os campos desejados:
-
-- **`_id: 0`**: Exclui o campo `_id` dos resultados finais.
-- **`nome: 1`**: Inclui o campo `nome`.
-- **`vagas: 1`**: Inclui o campo `vagas`.
-
-### Resumo da Consulta
-
-A consulta completa realiza as seguintes operações:
-
-1. Desmonta o array `vagas`.
-2. Realiza uma junção com a coleção "instituicoes" para obter informações sobre os estudantes relacionados a cada vaga.
-3. Desmonta o array resultante da junção para lidar com cada estudante individualmente.
-4. Agrupa de volta os documentos originais, coletando as informações necessárias.
-5. Projeta apenas os campos desejados no resultado final.
-
-O resultado final é uma lista de documentos contendo o `nome` e um array `vagas` com informações detalhadas sobre cada vaga, incluindo o nome do estudante, a data de início e a data de fim.
+Resumindo, esta consulta agrega dados dos serviços e suas vagas, junta esses dados com informações de instituições e estudantes, filtra para garantir que os dados estejam corretamente associados e projeta uma estrutura de saída específica com informações detalhadas sobre os serviços, instituições e estudantes.
